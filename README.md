@@ -1,5 +1,7 @@
 # {{PROJECT_NAME}}
 
+> **📋 Template** : voir [TEMPLATE.md](TEMPLATE.md) pour les instructions d'utilisation.
+
 [![Python](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
