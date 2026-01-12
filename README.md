@@ -9,7 +9,19 @@
 
 ## Installation
 
-**Prérequis** : Python 3.13+, [uv](https://github.com/astral-sh/uv) (`pip install uv`)
+**Prérequis** : Python 3.13+, [uv](https://github.com/astral-sh/uv)
+
+### Stack
+
+| Outil | Rôle |
+|-------|------|
+| [uv](https://github.com/astral-sh/uv) | Gestionnaire de dépendances (remplace pip) |
+| [ruff](https://github.com/astral-sh/ruff) | Linter + formatter (remplace flake8/black/isort) |
+| [pytest](https://pytest.org) | Tests |
+| [pre-commit](https://pre-commit.com) | Hooks Git automatiques |
+| [GitHub Actions](https://github.com/features/actions) | CI/CD (désactivé par défaut) |
+
+### Setup
 
 ```bash
 uv venv && .venv\Scripts\activate  # Windows
