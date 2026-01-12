@@ -9,7 +9,7 @@
 
 ## Installation
 
-**Prérequis** : Python 3.13+, [uv](https://github.com/astral-sh/uv)
+**Prérequis** : Python 3.13+, [uv](https://github.com/astral-sh/uv) (`pip install uv`)
 
 ### Stack
 
