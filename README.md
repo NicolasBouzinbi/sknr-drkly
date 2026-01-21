@@ -1,4 +1,4 @@
-# {{PROJECT_NAME}}
+# {{SKNR_DRKLY}}
 
 > **📋 Template** : voir [TEMPLATE.md](TEMPLATE.md) pour les instructions d'utilisation.
 
