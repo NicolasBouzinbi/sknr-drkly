@@ -4,10 +4,9 @@ import pytest
 
 from trading_scanner.indicators import apply_all
 from trading_scanner.strategies.presets import (
-    EMACrossover,
-    MomentumSurge,
-    OversoldBounce,
-    VWAPBounce,
+    ABCDPattern,
+    BullFlagMomentum,
+    MovingAverageTrend,
     get_strategy,
     STRATEGIES,
 )
@@ -16,12 +15,15 @@ from trading_scanner.strategies.presets import (
 class TestStrategyRegistry:
     """Tests for the strategy registry."""
 
-    def test_all_strategies_registered(self) -> None:
-        assert len(STRATEGIES) >= 4
+    def test_exactly_three_strategies_registered(self) -> None:
+        assert len(STRATEGIES) == 3
+
+    def test_expected_strategy_keys(self) -> None:
+        assert set(STRATEGIES.keys()) == {"abcd_pattern", "bull_flag_momentum", "ma_trend"}
 
     def test_get_strategy_valid(self) -> None:
-        strat = get_strategy("oversold_bounce")
-        assert isinstance(strat, OversoldBounce)
+        strat = get_strategy("abcd_pattern")
+        assert isinstance(strat, ABCDPattern)
 
     def test_get_strategy_invalid(self) -> None:
         with pytest.raises(KeyError, match="not found"):
@@ -34,56 +36,70 @@ class TestStrategyRegistry:
             assert strat.description
 
 
-class TestOversoldBounce:
-    """Tests for the OversoldBounce strategy."""
+class TestABCDPattern:
+    """Tests for the ABCDPattern strategy."""
 
-    def test_no_signal_on_random_data(self, sample_ohlcv) -> None:
+    def test_scan_returns_valid_or_none(self, sample_ohlcv) -> None:
         df = apply_all(sample_ohlcv)
-        strat = OversoldBounce()
+        strat = ABCDPattern()
         result = strat.scan_ticker("TEST", df)
-        # Random data is unlikely to trigger oversold + volume spike
-        # This is a smoke test — result can be None or a valid ScanResult
         if result is not None:
             assert result.ticker == "TEST"
-            assert result.signal == "Oversold Bounce"
+            assert result.signal == "ABCD Pattern"
+            assert result.strength in ("strong", "moderate")
+
+    def test_insufficient_data_returns_none(self, sample_ohlcv) -> None:
+        # Pass raw (no indicators) short slice — strategy's len() guard fires first
+        strat = ABCDPattern()
+        result = strat.scan_ticker("TEST", sample_ohlcv.iloc[:10])
+        assert result is None
 
     def test_scan_multiple_returns_list(self, sample_ohlcv) -> None:
         df = apply_all(sample_ohlcv)
-        strat = OversoldBounce()
+        strat = ABCDPattern()
         results = strat.scan_multiple({"TEST1": df, "TEST2": df})
         assert isinstance(results, list)
 
 
-class TestEMACrossover:
-    """Tests for the EMACrossover strategy."""
+class TestBullFlagMomentum:
+    """Tests for the BullFlagMomentum strategy."""
 
     def test_scan_returns_valid_or_none(self, sample_ohlcv) -> None:
         df = apply_all(sample_ohlcv)
-        strat = EMACrossover()
+        strat = BullFlagMomentum()
         result = strat.scan_ticker("TEST", df)
         if result is not None:
-            assert result.signal == "EMA Bullish Cross"
-            assert result.ema_trend == "bullish"
-
-
-class TestVWAPBounce:
-    """Tests for the VWAPBounce strategy."""
-
-    def test_scan_returns_valid_or_none(self, sample_ohlcv) -> None:
-        df = apply_all(sample_ohlcv)
-        strat = VWAPBounce()
-        result = strat.scan_ticker("TEST", df)
-        if result is not None:
-            assert result.signal == "VWAP Bounce"
-
-
-class TestMomentumSurge:
-    """Tests for the MomentumSurge strategy."""
-
-    def test_scan_returns_valid_or_none(self, sample_ohlcv) -> None:
-        df = apply_all(sample_ohlcv)
-        strat = MomentumSurge()
-        result = strat.scan_ticker("TEST", df)
-        if result is not None:
-            assert result.signal == "Momentum Surge"
+            assert result.signal == "Bull Flag Breakout"
+            assert result.vwap_position == "above"
             assert result.strength in ("strong", "moderate")
+
+    def test_insufficient_data_returns_none(self, sample_ohlcv) -> None:
+        # Pass raw (no indicators) short slice — strategy's len() guard fires first
+        strat = BullFlagMomentum()
+        result = strat.scan_ticker("TEST", sample_ohlcv.iloc[:10])
+        assert result is None
+
+    def test_scan_multiple_returns_list(self, sample_ohlcv) -> None:
+        df = apply_all(sample_ohlcv)
+        strat = BullFlagMomentum()
+        results = strat.scan_multiple({"TEST1": df, "TEST2": df})
+        assert isinstance(results, list)
+
+
+class TestMovingAverageTrend:
+    """Tests for the MovingAverageTrend strategy."""
+
+    def test_scan_returns_valid_or_none(self, sample_ohlcv) -> None:
+        df = apply_all(sample_ohlcv)
+        strat = MovingAverageTrend()
+        result = strat.scan_ticker("TEST", df)
+        if result is not None:
+            assert result.signal == "MA Trend Bounce"
+            assert result.ema_trend == "bullish"
+            assert result.strength in ("strong", "moderate")
+
+    def test_scan_multiple_returns_list(self, sample_ohlcv) -> None:
+        df = apply_all(sample_ohlcv)
+        strat = MovingAverageTrend()
+        results = strat.scan_multiple({"TEST1": df, "TEST2": df})
+        assert isinstance(results, list)
