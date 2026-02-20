@@ -1,33 +1,86 @@
 # CLAUDE.md
 
 ## Project Overview
-Day trading / swing trading stock scanner built with Python.
-Uses the interactive brokers API for market data and technical analysis indicators.
+
+CLI stock scanner for US equities (NYSE/NASDAQ) targeting day trading and swing trading setups.
+Uses Interactive Brokers (IBKR) as primary data source with yfinance as fallback.
+Supports historical bars (daily + intraday), real-time streaming quotes, and technical indicator scanning.
 
 ## Tech Stack
-- Python 3.12+
+
+- Python 3.12+ with type hints everywhere
 - uv for dependency management (pyproject.toml)
-- yfinance for market data
-- pandas / numpy for data manipulation
-- ta-lib or pandas-ta for technical indicators
-- Rich for CLI output (or Streamlit/Dash for web UI)
+- **ib_async** for IBKR Gateway API (replaces ib_insync, actively maintained)
+- yfinance as fallback data source
+- pandas + pandas-ta for indicators
+- Rich for CLI display (including Live tables for streaming)
+- Click for CLI framework
+- Pydantic for config/validation
+- structlog for logging
 
 ## Architecture
-- `src/scanner/` — Core scanning logic
-- `src/indicators/` — Technical indicator calculations
-- `src/filters/` — Stock filtering criteria
-- `src/ui/` — User interface (CLI or web)
-- `tests/` — pytest test suite
+
+```
+src/trading_scanner/
+├── cli.py               # Click CLI entrypoint (scan, live, status, watchlist, strategies)
+├── config.py            # Pydantic settings (IBKR connection + scanner params)
+├── data/
+│   ├── fetcher.py       # Provider orchestrator with fallback logic
+│   ├── streaming.py     # Real-time quote streaming (IBKR only, Rich Live table)
+│   ├── watchlists.py    # Watchlist management (JSON storage)
+│   └── providers/
+│       ├── __init__.py  # DataProvider ABC + DataSource enum
+│       ├── ibkr.py      # IBKR provider (ib_async: historical + realtime)
+│       └── yfinance_provider.py  # yfinance fallback provider
+├── indicators/
+│   ├── __init__.py      # apply_all() convenience function
+│   ├── rsi.py           # RSI calculation
+│   ├── ema.py           # EMA crossover detection
+│   ├── volume.py        # Relative volume analysis
+│   └── vwap.py          # VWAP calculation
+├── strategies/
+│   ├── base.py          # Abstract base strategy + ScanResult model
+│   └── presets.py       # Built-in scan strategies (4 presets)
+├── ui/
+│   └── tables.py        # Rich table formatting & display
+└── utils/
+    └── market.py        # Market hours, trading day checks
+```
+
+## IBKR Configuration
+
+- Default connection: IB Gateway on 127.0.0.1:4001 (headless)
+- IB Gateway ports: 4001 (live), 4002 (paper)
+- TWS ports: 7496 (live), 7497 (paper)
+- ib_async handles the IBKR binary protocol directly (no ibapi needed)
+- Rate limit: ~60 historical requests per 10 minutes, 0.5s delay between requests
+
+## Data Flow
+
+```
+CLI → fetcher.py (orchestrator)
+        ├── IBKRProvider (primary) → IB Gateway → IBKR servers
+        └── YFinanceProvider (fallback) → Yahoo Finance API
+```
+
+If IBKR connection fails, fetcher automatically falls back to yfinance.
 
 ## Development Commands
-- `uv run pytest` — Run tests
-- `uv run python -m scanner` — Run the scanner
-- `uv run ruff check .` — Lint
-- `uv run ruff format .` — Format
+
+- `uv run pytest` — run tests
+- `uv run pytest --cov=trading_scanner` — run tests with coverage
+- `uv run ruff check .` — lint
+- `uv run ruff format .` — format
+- `uv run mypy src/` — type check
+- `uv run scan --help` — run the CLI
+- `uv run scan status` — check IBKR connection + config
 
 ## Code Standards
-- PEP 8 compliant (enforced by ruff)
-- Type hints on all function signatures
-- Docstrings on all public functions (Google style)
-- KISS and DRY principles
-- Modern Python (3.12+ features: match/case, f-strings, etc.)
+
+- PEP 8 enforced by ruff (line length 99)
+- Type hints on ALL function signatures
+- Google-style docstrings on all public functions
+- KISS and DRY — no premature abstraction
+- Prefer composition over inheritance
+- Use `match/case` for provider dispatch
+- All DataFrames use lowercase columns: open, high, low, close, volume
