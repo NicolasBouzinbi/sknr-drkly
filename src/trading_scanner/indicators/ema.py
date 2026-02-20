@@ -36,7 +36,7 @@ def add_ema_crossover(
 
     # Crossover detection: compare current vs previous bar
     fast_above_now = df["ema_fast"] > df["ema_slow"]
-    fast_above_prev = fast_above_now.shift(1).fillna(False)
+    fast_above_prev = fast_above_now.shift(1, fill_value=False)
 
     df["ema_cross"] = None
     df.loc[fast_above_now & ~fast_above_prev, "ema_cross"] = "bullish_cross"

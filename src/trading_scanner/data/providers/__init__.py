@@ -81,11 +81,17 @@ class DataProvider(ABC):
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize DataFrame column names to lowercase.
 
+    Handles both flat and MultiIndex columns (newer yfinance versions return
+    a MultiIndex with levels (Price, Ticker) for single-ticker downloads).
+
     Args:
         df: Raw DataFrame from any provider.
 
     Returns:
-        DataFrame with lowercase column names.
+        DataFrame with flat, lowercase column names.
     """
+    if isinstance(df.columns, pd.MultiIndex):
+        # Drop the ticker level, keep only the price-type level
+        df = df.droplevel(level=1, axis=1)
     df.columns = [col.lower() for col in df.columns]
     return df

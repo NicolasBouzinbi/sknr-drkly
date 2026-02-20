@@ -4,6 +4,12 @@ import csv
 import sys
 from pathlib import Path
 
+# Ensure UTF-8 output on Windows terminals (avoids cp1252 encoding errors)
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 import click
 import structlog
 from rich.console import Console
@@ -24,7 +30,6 @@ from trading_scanner.utils.market import get_market_status
 
 structlog.configure(
     processors=[
-        structlog.stdlib.filter_by_level,
         structlog.stdlib.add_log_level,
         structlog.dev.ConsoleRenderer(),
     ],
@@ -154,6 +159,8 @@ def scan(
                 ema_fast=config.ema_fast,
                 ema_slow=config.ema_slow,
                 volume_sma_period=config.volume_sma_period,
+                ema_trend_period=50,
+                atr_period=14,
             )
             for ticker, df in data.items()
         }
