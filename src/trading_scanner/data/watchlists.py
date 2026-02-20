@@ -25,6 +25,28 @@ BUILTIN_WATCHLISTS: dict[str, list[str]] = {
         "TSLA", "NVDA", "AMD", "COIN", "PLTR", "SOFI", "RIVN", "LCID", "NIO", "MARA",
         "RIOT", "SMCI", "ARM", "IONQ", "RGTI", "QUBT", "MSTR", "GME", "AMC", "BBBY",
     ],
+    "day_trading_100": [
+        # Mega-cap tech — highest liquidity, options-rich
+        "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "AMD", "INTC", "AVGO",
+        # Semiconductors / AI hardware
+        "MU", "AMAT", "LRCX", "KLAC", "ARM", "SMCI", "MRVL", "TXN", "QCOM", "ON",
+        # High-growth software / cloud
+        "CRM", "ADBE", "NOW", "INTU", "SNOW", "PLTR", "DDOG", "NET", "CRWD", "PANW",
+        # Fintech / finance
+        "COIN", "SQ", "PYPL", "HOOD", "SOFI", "UPST", "NU", "AFRM", "JPM", "GS",
+        # Consumer / media / travel
+        "NFLX", "SHOP", "UBER", "ABNB", "DASH", "RBLX", "TTD", "PINS", "SNAP", "MELI",
+        # EV / clean energy
+        "RIVN", "LCID", "NIO", "XPEV", "LI", "PLUG", "CHPT", "BLNK", "BE", "SPWR",
+        # Crypto-adjacent / high-beta
+        "MSTR", "MARA", "RIOT", "CLSK", "CIFR", "IREN", "IONQ", "RGTI", "QUBT", "BBAI",
+        # Healthcare / biotech
+        "MRNA", "BNTX", "LLY", "ABBV", "BIIB", "REGN", "VRTX", "GILD", "NVAX", "HIMS",
+        # Energy / industrials
+        "XOM", "CVX", "OXY", "HAL", "BA", "GE", "F", "BAC", "MS", "SCHW",
+        # High-volatility / speculative
+        "GME", "AMC", "DJT", "BABA", "JD", "BIDU", "PDD", "FUTU", "TIGR", "ACHR",
+    ],
 }
 
 
