@@ -15,7 +15,7 @@ class ABCDPattern(BaseStrategy):
     Conditions:
         - B→C retraces 38.2–78.6% of the A→B leg
         - CD leg projected equal to AB (equal-leg symmetry)
-        - Current price within 2% of projected D completion zone
+        - Current price within 1 ATR of projected D completion zone
         - Price starting to recover at D (last close > prior close)
         - RSI < 45 (compressed/oversold at D)
         - Volume pickup at D (rvol >= 1.3)
@@ -27,7 +27,7 @@ class ABCDPattern(BaseStrategy):
     _LOOKBACK = 40
     _BC_RETRACE_MIN = 0.382
     _BC_RETRACE_MAX = 0.786
-    _D_TOLERANCE = 0.02
+    _D_TOLERANCE_FALLBACK = 0.02  # used when ATR is unavailable
 
     def scan_ticker(self, ticker: str, df: pd.DataFrame) -> ScanResult | None:
         """Evaluate a ticker for the ABCD harmonic pattern.
@@ -87,16 +87,22 @@ class ABCDPattern(BaseStrategy):
         if d_projected <= 0:
             return None
 
-        # Current price must be near D
+        # ATR-adaptive D tolerance: price must be within 1 ATR of the projected D
+        last = df.iloc[-1]
+        atr = last.get("atr")
         current_close = float(closes[-1])
-        if abs(current_close - d_projected) / d_projected > self._D_TOLERANCE:
+        if pd.notna(atr) and float(atr) > 0:
+            tolerance = float(atr) / d_projected
+        else:
+            tolerance = self._D_TOLERANCE_FALLBACK
+
+        if abs(current_close - d_projected) / d_projected > tolerance:
             return None
 
         # Price recovering at D (last bar closed higher than prior)
         if closes[-1] <= closes[-2]:
             return None
 
-        last = df.iloc[-1]
         rsi = last.get("rsi")
         rvol = float(last.get("rvol") or 0)
 
@@ -106,6 +112,7 @@ class ABCDPattern(BaseStrategy):
             return None
 
         strength = "strong" if rvol >= 2.0 and float(rsi) < 35 else "moderate"
+        atr_str = f" ATR={float(atr):.2f}" if pd.notna(atr) else ""
 
         return ScanResult(
             ticker=ticker,
@@ -116,7 +123,7 @@ class ABCDPattern(BaseStrategy):
             rvol=round(rvol, 2),
             ema_trend=last.get("ema_trend"),
             vwap_position=last.get("price_vs_vwap"),
-            details=f"A={a_price:.2f} B={b_price:.2f} C={c_price:.2f} D≈{d_projected:.2f}",
+            details=f"A={a_price:.2f} B={b_price:.2f} C={c_price:.2f} D≈{d_projected:.2f}{atr_str}",
         )
 
 
@@ -125,12 +132,12 @@ class BullFlagMomentum(BaseStrategy):
 
     The bull flag is a continuation pattern:
         Pole: strong upward price move with elevated volume
-        Flag: orderly pullback/consolidation with declining volume
+        Flag: orderly, tight consolidation (range <= 1.5 ATR) with declining volume
         Breakout: price reclaims the flag high with a volume surge
 
     Conditions:
         - Pole: 5%+ price gain from bar[-20] to the peak in bars[-20:-6]
-        - Flag: shallow retracement (<38% of pole size), bars[-6:-1]
+        - Flag: shallow retracement (<38% of pole size) and tight range (<=1.5 ATR)
         - Breakout: current close > flag high, rvol >= 2.0
         - RSI 50–70 (trending momentum, not overbought)
         - Price above VWAP
@@ -141,6 +148,7 @@ class BullFlagMomentum(BaseStrategy):
 
     _MIN_POLE_GAIN = 0.05
     _MAX_FLAG_RETRACE = 0.38
+    _MAX_FLAG_ATR_MULT = 1.5  # flag range must be <= 1.5 × ATR
     _MIN_RVOL = 2.0
     _RSI_MIN = 50
     _RSI_MAX = 70
@@ -181,12 +189,19 @@ class BullFlagMomentum(BaseStrategy):
         if flag_retrace > self._MAX_FLAG_RETRACE:
             return None
 
+        # ATR tightness check: flag range must be compact (no wide/volatile flags)
+        last = df.iloc[-1]
+        atr = last.get("atr")
+        flag_range = flag_high - flag_low
+        if pd.notna(atr) and float(atr) > 0:
+            if flag_range > self._MAX_FLAG_ATR_MULT * float(atr):
+                return None
+
         # Breakout: current close above flag high
         current_close = float(closes[-1])
         if current_close <= flag_high:
             return None
 
-        last = df.iloc[-1]
         rvol = float(last.get("rvol") or 0)
         rsi = last.get("rsi")
         above_vwap = last.get("price_vs_vwap") == "above"
@@ -203,6 +218,7 @@ class BullFlagMomentum(BaseStrategy):
         volume_contracted = flag_avg_vol < pole_avg_vol
 
         strength = "strong" if rvol >= 3.0 and volume_contracted else "moderate"
+        atr_str = f" ATR={float(atr):.2f}" if pd.notna(atr) else ""
 
         return ScanResult(
             ticker=ticker,
@@ -213,18 +229,19 @@ class BullFlagMomentum(BaseStrategy):
             rvol=round(rvol, 2),
             ema_trend=last.get("ema_trend"),
             vwap_position="above",
-            details=f"Pole={pole_gain:.1%} | Flag high={flag_high:.2f} | RVOL={rvol:.1f}x",
+            details=f"Pole={pole_gain:.1%} | Flag high={flag_high:.2f} | RVOL={rvol:.1f}x{atr_str}",
         )
 
 
 class MovingAverageTrend(BaseStrategy):
     """Trend-following strategy using moving average alignment and pullback entries.
 
-    Identifies stocks in confirmed uptrends where price has pulled back to
-    a key moving average and is now bouncing, offering a low-risk entry point.
+    Identifies stocks in confirmed uptrends (EMA9 > EMA21, price > EMA50) where
+    price has pulled back to the EMA21 and is now bouncing — a low-risk entry point.
 
     Conditions:
-        - EMA fast (9) > EMA slow (21): bullish MA alignment
+        - EMA fast (9) > EMA slow (21): short-term bullish alignment
+        - Price above EMA 50: medium-term uptrend confirmed
         - Price pulled back near EMA slow (within 2% above it)
         - Previous close was at or below EMA slow (confirms the pullback)
         - Current close > previous close (bounce confirmation)
@@ -233,7 +250,7 @@ class MovingAverageTrend(BaseStrategy):
     """
 
     name = "ma_trend"
-    description = "MA trend bounce — pullback-to-EMA entry in a bullish alignment"
+    description = "MA trend bounce — EMA50-confirmed uptrend with pullback-to-EMA21 entry"
 
     _EMA_PROXIMITY = 0.02
     _RSI_MIN = 45
@@ -259,6 +276,7 @@ class MovingAverageTrend(BaseStrategy):
         if pd.isna(last.get("ema_fast")) or pd.isna(last.get("ema_slow")):
             return None
 
+        # Short-term bullish alignment: EMA9 > EMA21
         if last.get("ema_trend") != "bullish":
             return None
 
@@ -266,6 +284,11 @@ class MovingAverageTrend(BaseStrategy):
         ema_fast = float(last["ema_fast"])
         close = float(last["close"])
         prev_close = float(prev["close"])
+
+        # Medium-term trend filter: price must be above EMA50
+        ema_50 = last.get("ema_50")
+        if pd.notna(ema_50) and close < float(ema_50):
+            return None
 
         # Price must be above ema_slow but within proximity (the pullback entry zone)
         if close < ema_slow:
@@ -293,6 +316,7 @@ class MovingAverageTrend(BaseStrategy):
         above_vwap = last.get("price_vs_vwap") == "above"
         strength = "strong" if rvol >= 1.8 and above_vwap else "moderate"
         spread_pct = (ema_fast - ema_slow) / ema_slow * 100
+        ema50_str = f" EMA50={float(ema_50):.2f}" if pd.notna(ema_50) else ""
 
         return ScanResult(
             ticker=ticker,
@@ -303,7 +327,7 @@ class MovingAverageTrend(BaseStrategy):
             rvol=round(rvol, 2),
             ema_trend="bullish",
             vwap_position=last.get("price_vs_vwap"),
-            details=f"EMA9={ema_fast:.2f} EMA21={ema_slow:.2f} spread={spread_pct:.1f}%",
+            details=f"EMA9={ema_fast:.2f} EMA21={ema_slow:.2f} spread={spread_pct:.1f}%{ema50_str}",
         )
 
 

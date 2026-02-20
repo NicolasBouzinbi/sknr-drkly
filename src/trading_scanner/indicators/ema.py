@@ -43,3 +43,21 @@ def add_ema_crossover(
     df.loc[~fast_above_now & fast_above_prev, "ema_cross"] = "bearish_cross"
 
     return df
+
+
+def add_trend_ema(df: pd.DataFrame, period: int = 50) -> pd.DataFrame:
+    """Calculate a medium-term trend EMA for higher-timeframe direction.
+
+    Adds columns:
+        - ema_50: {period}-period EMA of close price.
+
+    Args:
+        df: OHLCV DataFrame with a 'close' column.
+        period: EMA period (default 50).
+
+    Returns:
+        DataFrame with trend EMA column appended.
+    """
+    df = df.copy()
+    df[f"ema_{period}"] = ta.ema(df["close"], length=period)
+    return df

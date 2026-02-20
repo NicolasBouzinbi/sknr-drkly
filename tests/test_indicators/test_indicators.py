@@ -3,7 +3,8 @@
 import pandas as pd
 import pytest
 
-from trading_scanner.indicators.ema import add_ema_crossover
+from trading_scanner.indicators.atr import add_atr
+from trading_scanner.indicators.ema import add_ema_crossover, add_trend_ema
 from trading_scanner.indicators.rsi import add_rsi
 from trading_scanner.indicators.volume import add_relative_volume
 from trading_scanner.indicators.vwap import add_vwap
@@ -92,3 +93,48 @@ class TestVWAP:
         result = add_vwap(sample_ohlcv)
         valid_positions = result["price_vs_vwap"].dropna().unique()
         assert all(p in ("above", "below") for p in valid_positions)
+
+
+class TestATR:
+    """Tests for ATR indicator."""
+
+    def test_adds_atr_column(self, sample_ohlcv: pd.DataFrame) -> None:
+        result = add_atr(sample_ohlcv)
+        assert "atr" in result.columns
+
+    def test_atr_positive(self, sample_ohlcv: pd.DataFrame) -> None:
+        result = add_atr(sample_ohlcv)
+        valid_atr = result["atr"].dropna()
+        assert (valid_atr > 0).all()
+
+    def test_atr_less_than_price(self, sample_ohlcv: pd.DataFrame) -> None:
+        result = add_atr(sample_ohlcv)
+        valid = result.dropna(subset=["atr"])
+        assert (valid["atr"] < valid["close"]).all()
+
+    def test_does_not_modify_original(self, sample_ohlcv: pd.DataFrame) -> None:
+        original_cols = set(sample_ohlcv.columns)
+        add_atr(sample_ohlcv)
+        assert set(sample_ohlcv.columns) == original_cols
+
+
+class TestTrendEMA:
+    """Tests for trend EMA (EMA50) indicator."""
+
+    def test_adds_ema_50_column(self, sample_ohlcv: pd.DataFrame) -> None:
+        result = add_trend_ema(sample_ohlcv)
+        assert "ema_50" in result.columns
+
+    def test_ema_50_positive(self, sample_ohlcv: pd.DataFrame) -> None:
+        result = add_trend_ema(sample_ohlcv)
+        valid = result["ema_50"].dropna()
+        assert (valid > 0).all()
+
+    def test_custom_period(self, sample_ohlcv: pd.DataFrame) -> None:
+        result = add_trend_ema(sample_ohlcv, period=20)
+        assert "ema_20" in result.columns
+
+    def test_does_not_modify_original(self, sample_ohlcv: pd.DataFrame) -> None:
+        original_cols = set(sample_ohlcv.columns)
+        add_trend_ema(sample_ohlcv)
+        assert set(sample_ohlcv.columns) == original_cols

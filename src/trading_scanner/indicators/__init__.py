@@ -8,12 +8,21 @@ They take a DataFrame with OHLCV columns and return it with new indicator column
 
 import pandas as pd
 
-from trading_scanner.indicators.ema import add_ema_crossover
+from trading_scanner.indicators.atr import add_atr
+from trading_scanner.indicators.ema import add_ema_crossover, add_trend_ema
 from trading_scanner.indicators.rsi import add_rsi
 from trading_scanner.indicators.volume import add_relative_volume
 from trading_scanner.indicators.vwap import add_vwap
 
-__all__ = ["add_ema_crossover", "add_rsi", "add_relative_volume", "add_vwap", "apply_all"]
+__all__ = [
+    "add_atr",
+    "add_ema_crossover",
+    "add_trend_ema",
+    "add_rsi",
+    "add_relative_volume",
+    "add_vwap",
+    "apply_all",
+]
 
 
 def apply_all(
@@ -21,6 +30,8 @@ def apply_all(
     rsi_period: int = 14,
     ema_fast: int = 9,
     ema_slow: int = 21,
+    ema_trend_period: int = 50,
+    atr_period: int = 14,
     volume_sma_period: int = 20,
 ) -> pd.DataFrame:
     """Apply all indicators to a DataFrame in one call.
@@ -30,6 +41,8 @@ def apply_all(
         rsi_period: RSI lookback period.
         ema_fast: Fast EMA period.
         ema_slow: Slow EMA period.
+        ema_trend_period: Trend EMA period for medium-term direction.
+        atr_period: ATR lookback period.
         volume_sma_period: Volume SMA lookback for relative volume.
 
     Returns:
@@ -37,6 +50,8 @@ def apply_all(
     """
     df = add_rsi(df, period=rsi_period)
     df = add_ema_crossover(df, fast=ema_fast, slow=ema_slow)
+    df = add_trend_ema(df, period=ema_trend_period)
+    df = add_atr(df, period=atr_period)
     df = add_relative_volume(df, period=volume_sma_period)
     df = add_vwap(df)
     return df
