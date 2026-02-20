@@ -1,50 +1,36 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
-
-# Distribution / packaging
-build/
-dist/
 *.egg-info/
-*.egg
+dist/
+build/
+.eggs/
 
 # Virtual environments
 .venv/
 venv/
-ENV/
-
-# Environment variables
-.env
-
-# UV
-.uv/
-
-# Pytest
-.pytest_cache/
-
-# Ruff
-.ruff_cache/
-
-# Jupyter Notebook
-.ipynb_checkpoints/
 
 # IDE
-.idea/
 .vscode/
+.idea/
 *.swp
 *.swo
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# mypy
+.mypy_cache/
+
+# ruff
+.ruff_cache/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Data files
-data/raw/*
-!data/raw/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
-
-# Logs
-*.log
-logs/
+# Project-specific
+*.csv
