@@ -17,9 +17,9 @@ from trading_scanner.indicators.vwap import add_vwap
 __all__ = [
     "add_atr",
     "add_ema_crossover",
-    "add_trend_ema",
-    "add_rsi",
     "add_relative_volume",
+    "add_rsi",
+    "add_trend_ema",
     "add_vwap",
     "apply_all",
 ]

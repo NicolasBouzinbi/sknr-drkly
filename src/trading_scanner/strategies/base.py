@@ -1,6 +1,7 @@
 """Abstract base class for scanning strategies."""
 
 from abc import ABC, abstractmethod
+from typing import Any, ClassVar
 
 import pandas as pd
 from pydantic import BaseModel
@@ -25,10 +26,22 @@ class BaseStrategy(ABC):
 
     Subclasses must implement `scan_ticker` which evaluates a single
     ticker's DataFrame and returns a ScanResult if conditions are met.
+
+    Subclasses are auto-registered in ``_registry`` via ``__init_subclass__``.
+    To add a new strategy, create a file in the ``strategies/`` package with a
+    concrete subclass — it will be discovered automatically at import time.
     """
+
+    _registry: ClassVar[dict[str, type["BaseStrategy"]]] = {}
 
     name: str = "base"
     description: str = ""
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """Auto-register concrete strategy subclasses."""
+        super().__init_subclass__(**kwargs)
+        if hasattr(cls, "name") and cls.name != "base":
+            BaseStrategy._registry[cls.name] = cls
 
     @abstractmethod
     def scan_ticker(self, ticker: str, df: pd.DataFrame) -> ScanResult | None:

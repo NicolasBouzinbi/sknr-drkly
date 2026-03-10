@@ -5,8 +5,8 @@ It manages provider selection (IBKR primary, yfinance fallback) and provides
 a unified interface regardless of the underlying data source.
 """
 
-import structlog
 import pandas as pd
+import structlog
 
 from trading_scanner.config import ScannerConfig, get_config
 from trading_scanner.data.providers import DataProvider, DataSource

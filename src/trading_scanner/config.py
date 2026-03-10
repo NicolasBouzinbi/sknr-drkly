@@ -10,7 +10,6 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-
 APP_DIR = Path.home() / ".trading_scanner"
 APP_DIR.mkdir(exist_ok=True)
 
@@ -37,13 +36,19 @@ class ScannerConfig(BaseSettings):
 
     # --- IBKR Gateway connection ---
     ibkr_host: str = Field(default="127.0.0.1", description="IB Gateway host")
-    ibkr_port: int = Field(default=4001, description="IB Gateway port (4001=Gateway, 7497=TWS paper, 7496=TWS live)")
+    ibkr_port: int = Field(
+        default=4001, description="IB Gateway port (4001=Gateway, 7497=TWS paper, 7496=TWS live)"
+    )
     ibkr_client_id: int = Field(default=1, description="IBKR client ID (unique per connection)")
     ibkr_timeout: int = Field(default=10, description="Connection timeout in seconds")
 
     # --- Data fetching ---
-    default_period: str = Field(default="6mo", description="Default lookback period (1d, 5d, 1mo, 6mo, 1y)")
-    default_interval: str = Field(default="1d", description="Default bar size (1m, 5m, 15m, 1h, 1d)")
+    default_period: str = Field(
+        default="6mo", description="Default lookback period (1d, 5d, 1mo, 6mo, 1y)"
+    )
+    default_interval: str = Field(
+        default="1d", description="Default bar size (1m, 5m, 15m, 1h, 1d)"
+    )
     max_concurrent_fetches: int = Field(default=5, description="Max parallel ticker fetches")
     cache_ttl_minutes: int = Field(default=15, description="Data cache TTL in minutes")
 

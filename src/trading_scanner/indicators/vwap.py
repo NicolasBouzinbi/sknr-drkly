@@ -31,7 +31,9 @@ def add_vwap(df: pd.DataFrame) -> pd.DataFrame:
     if is_intraday:
         # Reset VWAP each day
         day_groups = df.index.date
-        df["vwap"] = tp_volume.groupby(day_groups).cumsum() / df["volume"].groupby(day_groups).cumsum()
+        df["vwap"] = (
+            tp_volume.groupby(day_groups).cumsum() / df["volume"].groupby(day_groups).cumsum()
+        )
     else:
         # Rolling VWAP over the full period for daily data
         df["vwap"] = tp_volume.cumsum() / df["volume"].cumsum()

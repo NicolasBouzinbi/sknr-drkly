@@ -1,7 +1,6 @@
 """Tests for technical indicator calculations."""
 
 import pandas as pd
-import pytest
 
 from trading_scanner.indicators.atr import add_atr
 from trading_scanner.indicators.ema import add_ema_crossover, add_trend_ema

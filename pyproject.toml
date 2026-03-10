@@ -1,7 +1,7 @@
 [project]
 name = "trading-scanner"
 version = "0.1.0"
-description = "CLI stock scanner for day trading and swing trading setups"
+description = "Web-based stock scanner for day trading and swing trading setups"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
@@ -13,13 +13,13 @@ dependencies = [
     "pandas>=2.2",
     "pandas-ta>=0.3.14b1",
     "numpy>=1.26",
-    "rich>=13.7",
-    "click>=8.1",
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
     "httpx>=0.27",
     "tenacity>=8.3",
     "structlog>=24.4",
+    "nicegui>=2.0",
+    "plotly>=5.18",
 ]
 
 [project.optional-dependencies]
@@ -33,7 +33,7 @@ dev = [
 ]
 
 [project.scripts]
-scan = "trading_scanner.cli:main"
+scanner = "trading_scanner.app:start"
 
 [build-system]
 requires = ["hatchling"]

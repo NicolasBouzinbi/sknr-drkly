@@ -11,7 +11,7 @@ import time
 
 import pandas as pd
 import structlog
-from ib_async import IB, Contract, Stock, util
+from ib_async import IB, Stock, util
 
 from trading_scanner.config import ScannerConfig, get_config
 from trading_scanner.data.providers import DataProvider, normalize_columns
